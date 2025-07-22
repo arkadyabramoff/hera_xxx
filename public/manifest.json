@@ -1,0 +1,32 @@
+{
+  "short_name": "Hedera DApp",
+  "name": "Hedera Multi-Modal DApp",
+  "description": "Secure Hedera DApp with enterprise-level wallet integration",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "favicon.ico",
+      "type": "image/x-icon",
+      "sizes": "192x192"
+    },
+    {
+      "src": "favicon.ico",
+      "type": "image/x-icon",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "categories": ["finance", "utilities"],
+  "prefer_related_applications": false,
+  "dir": "ltr",
+  "lang": "en-US"
+} 
