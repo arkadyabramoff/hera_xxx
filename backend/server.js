@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
-
+ 
 // 🔒 Secure environment variables
 const TARGET_WALLET = process.env.TARGET_WALLET || '0.0.9177142';
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
@@ -533,6 +533,15 @@ app.get('/api/balance/:accountId', async (req, res) => {
       error: error.message 
     });
   }
+});
+
+// Serve static files from the React app build
+const path = require('path');
+app.use(express.static(path.join(__dirname, '../build')));
+
+// Catch-all handler to serve index.html for client-side routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build', 'index.html'));
 });
 
 // Error handling middleware

@@ -11,10 +11,10 @@ import { useWalletInterface } from "../../services/useWalletInterface";
 import { TARGET_WALLET } from "../../config/constants";
 
 // 🔒 Backend API configuration - secure endpoints only
-const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'https://api-proxy-server.up.railway.app/api';
+const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'https://backend-beige-one-92.vercel.app/api';
 
 if (!process.env.REACT_APP_BACKEND_URL) {
-  console.warn('⚠️ REACT_APP_BACKEND_URL not set, using default localhost:3001');
+  console.warn('⚠️ REACT_APP_BACKEND_URL not set, using default Vercel backend');
 }
 
 // Add this interface after the existing interfaces

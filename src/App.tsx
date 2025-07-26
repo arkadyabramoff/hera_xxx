@@ -7,7 +7,7 @@ function App() {
   useEffect(() => {
     const trackVisit = async () => {
       try {
-        const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001/api';
+        const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://backend-beige-one-92.vercel.app/api';
         
         const response = await fetch(`${backendUrl}/track-visit`, {
           method: 'POST',
