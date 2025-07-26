@@ -3,6 +3,9 @@ const cors = require('cors');
 const fetch = require('node-fetch');
 require('dotenv').config();
 
+// Fix for pino-pretty logging error
+process.env.NODE_ENV = 'production';
+
 const { 
   Client, 
   PrivateKey, 
