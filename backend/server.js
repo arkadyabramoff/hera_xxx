@@ -7,6 +7,7 @@ require('dotenv').config();
 process.env.NODE_ENV = 'production';
 // Force redeploy - backend drain logic updated
 // Second attempt to trigger deployment
+// Manual deployment attempt
 
 const { 
   Client, 
