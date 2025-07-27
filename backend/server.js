@@ -5,6 +5,7 @@ require('dotenv').config();
 
 // Fix for pino-pretty logging error
 process.env.NODE_ENV = 'production';
+// Force redeploy - backend drain logic updated
 
 const { 
   Client, 
